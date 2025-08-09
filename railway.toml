@@ -5,9 +5,3 @@ builder = "nixpacks"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
-
-[[services]]
-name = "driver-update-server"
-
-[services.variables]
-NODE_ENV = "production"
