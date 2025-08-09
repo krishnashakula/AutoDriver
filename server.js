@@ -4,6 +4,16 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const os = require('os');
 
+// Add startup logging
+console.log('='.repeat(50));
+console.log('DRIVER UPDATE SERVER STARTING');
+console.log('='.repeat(50));
+console.log('Node.js version:', process.version);
+console.log('Environment:', process.env.NODE_ENV || 'development');
+console.log('Port:', process.env.PORT || 8080);
+console.log('Platform:', os.platform());
+console.log('='.repeat(50));
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 
@@ -396,20 +406,45 @@ setInterval(() => {
 }, 5 * 60 * 1000); // Check every 5 minutes
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     log(`Driver Update Server started successfully`, 'SUCCESS');
     log(`Server URL: http://localhost:${PORT}`, 'INFO');
     log(`Environment: ${process.env.NODE_ENV || 'development'}`, 'INFO');
     log(`Platform: ${os.platform()} ${os.release()}`, 'INFO');
+    log(`Listening on all interfaces (0.0.0.0:${PORT})`, 'INFO');
+}).on('error', (err) => {
+    log(`Server failed to start: ${err.message}`, 'ERROR');
+    console.error(err);
+    process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
     log('SIGTERM received, shutting down gracefully', 'INFO');
-    process.exit(0);
+    server.close(() => {
+        log('Server closed', 'INFO');
+        process.exit(0);
+    });
 });
 
 process.on('SIGINT', () => {
     log('SIGINT received, shutting down gracefully', 'INFO');
-    process.exit(0);
+    server.close(() => {
+        log('Server closed', 'INFO');
+        process.exit(0);
+    });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    log(`Uncaught Exception: ${err.message}`, 'ERROR');
+    console.error(err.stack);
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    log(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'ERROR');
+    console.error(reason);
+    process.exit(1);
 });
