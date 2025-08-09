@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Update Management System - Enterprise Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6741 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header-left p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.disconnected {
+            background: #dc3545;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 2px solid #dee2e6;
+            padding: 30px 20px;
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-menu li {
+            margin-bottom: 10px;
+        }
+
+        .nav-menu a {
+            display: block;
+            padding: 12px 15px;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .info-card h4 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-card .value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .info-card .value.warning {
+            color: #ffc107;
+        }
+
+        .info-card .value.danger {
+            color: #dc3545;
+        }
+
+        .info-card .value.success {
+            color: #28a745;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #dee2e6;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #28a745);
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-color: #007bff;
+        }
+
+        .action-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .action-card p {
+            color: #6c757d;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .action-card .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #bd2130);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .settings-panel {
+            background: linear-gradient(135deg, #e8f4fd, #f0f8ff);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #cce7ff;
+        }
+
+        .settings-panel h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+            transition: border-color 0.3s ease;
+        }
+
+        .checkbox-group:hover {
+            border-color: #007bff;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            transform: scale(1.2);
+        }
+
+        .execution-panel {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .execution-header {
+            background: linear-gradient(135deg, #343a40, #495057);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .execution-header h3 {
+            margin: 0;
+        }
+
+        .execution-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            min-width: auto;
+        }
+
+        .progress-container {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #28a745);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            width: 0%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .log-output {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #2d3748;
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            margin-bottom: 4px;
+        }
+
+        .log-info {
+            border-left-color: #3182ce;
+            color: #bee3f8;
+        }
+
+        .log-success {
+            border-left-color: #38a169;
+            color: #c6f6d5;
+        }
+
+        .log-warning {
+            border-left-color: #d69e2e;
+            color: #faf089;
+        }
+
+        .log-error {
+            border-left-color: #e53e3e;
+            color: #fed7d7;
+            font-weight: bold;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 12px 12px 0 0;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+            border-bottom: none;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #007bff;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .tab-button:hover,
+        .tab-button.active {
+            background: white;
+            color: #007bff;
+        }
+
+        .tab-button.active::after {
+            transform: scaleX(1);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #4a5568, #2d3748);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #cce7ff;
+            color: #004085;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+        }
+
+        .toast.warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #17a2b8, #007bff);
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #f8f9fa;
+            color: #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+                border-right: none;
+                border-top: 2px solid #dee2e6;
+            }
+            
+            .content-area {
+                order: 1;
+                padding: 20px;
+            }
+            
+            .action-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div>Initializing system...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>Driver Update Management System</h1>
+                <p>Enterprise-grade driver management and system optimization</p>
+            </div>
+            <div class="header-right">
+                <div class="connection-status">
+                    <div class="status-indicator" id="connectionStatus"></div>
+                    <span id="connectionText">Connected to server</span>
+                </div>
+                <div id="systemTime"></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>Navigation</h3>
+                <ul class="nav-menu">
+                    <li><a href="#" class="nav-link active" data-page="dashboard">Dashboard</a></li>
+                    <li><a href="#" class="nav-link" data-page="operations">Operations</a></li>
+                    <li><a href="#" class="nav-link" data-page="history">History</a></li>
+                    <li><a href="#" class="nav-link" data-page="settings">Settings</a></li>
+                    <li><a href="#" class="nav-link" data-page="logs">System Logs</a></li>
+                </ul>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard Page -->
+                <div class="page active" id="dashboard">
+                    <div class="system-info" id="systemInfo">
+                        <div class="info-card">
+                            <h4>Computer Name</h4>
+                            <div class="value" id="computerName">Loading...</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Operating System</h4>
+                            <div class="value" id="operatingSystem">Loading...</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Total Devices</h4>
+                            <div class="value" id="totalDevices">-</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Problem Devices</h4>
+                            <div class="value" id="problemDevices">-</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Last Scan</h4>
+                            <div class="value" id="lastScan" style="font-size: 1.2em;">Never</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>System Health</h4>
+                            <div class="value success" id="systemHealth">Good</div>
+                        </div>
+                    </div>
+
+                    <div class="action-grid">
+                        <div class="action-card">
+                            <div class="meta">
+                                <span>Estimated time: 30-60s</span>
+                                <span>Threads: <span id="scanThreads">8</span></span>
+                            </div>
+                            <h3>Quick Device Scan</h3>
+                            <p>Perform a comprehensive scan of all system devices to identify driver issues, missing drivers, and potential problems.</p>
+                            <button class="btn btn-primary" onclick="startOperation('scan')">
+                                <span>Start Scan</span>
+                            </button>
+                        </div>
+
+                        <div class="action-card">
+                            <div class="meta">
+                                <span>Estimated time: 2-5min</span>
+                                <span>Risk: Low</span>
+                            </div>
+                            <h3>Update Problem Drivers</h3>
+                            <p>Automatically update drivers for devices with known issues using Device Manager and manufacturer recommendations.</p>
+                            <button class="btn btn-warning" onclick="startOperation('update')">
+                                <span>Update Drivers</span>
+                            </button>
+                        </div>
+
+                        <div class="action-card">
+                            <div class="meta">
+                                <span>Estimated time: 1-3min</span>
+                                <span>Source: Microsoft</span>
+                            </div>
+                            <h3>Windows Update Drivers</h3>
+                            <p>Check and install driver updates available through Windows Update service with official Microsoft drivers.</p>
+                            <button class="btn btn-success" onclick="startOperation('windows-update')">
+                                <span>Windows Update</span>
+                            </button>
+                        </div>
+
+                        <div class="action-card">
+                            <div class="meta">
+                                <span>Estimated time: 3-8min</span>
+                                <span>Comprehensive</span>
+                            </div>
+                            <h3>Complete System Analysis</h3>
+                            <p>Full driver analysis including device scan, Windows Update check, manufacturer tools, and detailed reporting.</p>
+                            <button class="btn btn-danger" onclick="startOperation('all')">
+                                <span>Full Analysis</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operations Page -->
+                <div class="page" id="operations">
+                    <div class="settings-panel">
+                        <h3>Operation Configuration</h3>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label for="maxThreads">Maximum Threads</label>
+                                <input type="number" id="maxThreads" value="8" min="1" max="32">
+                            </div>
+                            <div class="form-group">
+                                <label for="operationTimeout">Timeout (minutes)</label>
+                                <input type="number" id="operationTimeout" value="10" min="1" max="60">
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="dryRun" checked>
+                                    <label for="dryRun">Dry Run Mode (Safe testing)</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="fastMode">
+                                    <label for="fastMode">Fast Mode (Minimal logging)</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="createBackup" checked>
+                                    <label for="createBackup">Create driver backup</label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="createRestorePoint" checked>
+                                    <label for="createRestorePoint">Create restore point</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="execution-panel">
+                        <div class="execution-header">
+                            <h3>Operation Monitor</h3>
+                            <div class="execution-controls">
+                                <button class="btn btn-sm btn-warning" onclick="pauseCurrentOperation()" id="pauseBtn" disabled>Pause</button>
+                                <button class="btn btn-sm btn-danger" onclick="cancelCurrentOperation()" id="cancelBtn" disabled>Cancel</button>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="progress-info">
+                                <span id="operationStatus">Ready to execute operations</span>
+                                <span id="operationTime">00:00</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressBar"></div>
+                            </div>
+                        </div>
+
+                        <div class="log-output" id="logOutput">
+                            <div class="log-entry log-info">System ready for driver operations...</div>
+                            <div class="log-entry log-info">Configure settings above and select an operation to begin</div>
+                        </div>
+                    </div>
+
+                    <div class="results-section" id="resultsSection">
+                        <div class="results-tabs">
+                            <button class="tab-button active" onclick="showTab('devices')">Device Status</button>
+                            <button class="tab-button" onclick="showTab('updates')">Available Updates</button>
+                            <button class="tab-button" onclick="showTab('results')">Operation Results</button>
+                            <button class="tab-button" onclick="showTab('report')">Executive Summary</button>
+                        </div>
+
+                        <div class="tab-content active" id="devicesTab">
+                            <h4>Device Analysis Results</h4>
+                            <table class="data-table" id="deviceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Device Name</th>
+                                        <th>Manufacturer</th>
+                                        <th>Status</th>
+                                        <th>Error Code</th>
+                                        <th>Driver Version</th>
+                                        <th>Action Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deviceTableBody">
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; padding: 40px; color: #6c757d;">
+                                            No device data available. Run a scan to populate this table.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="tab-content" id="updatesTab">
+                            <h4>Available Driver Updates</h4>
+                            <table class="data-table" id="updatesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Update Title</th>
+                                        <th>Size (MB)</th>
+                                        <th>Type</th>
+                                        <th>Categories</th>
+                                        <th>Release Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="updatesTableBody">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px; color: #6c757d;">
+                                            No updates available. Run Windows Update scan to check for driver updates.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="tab-content" id="resultsTab">
+                            <h4>Operation Results</h4>
+                            <table class="data-table" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Device Name</th>
+                                        <th>Original Issue</th>
+                                        <th>Operation Performed</th>
+                                        <th>Result</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsTableBody">
+                                    <tr>
+                                        <td colspan="5" style="text-align: center; padding: 40px; color: #6c757d;">
+                                            No operation results yet. Complete a driver update operation to see results.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="tab-content" id="reportTab">
+                            <h4>Executive Summary Report</h4>
+                            <div id="summaryReport">
+                                <div style="text-align: center; padding: 40px; color: #6c757d;">
+                                    Summary report will be generated after completing operations.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other pages would be implemented similarly -->
+                <div class="page" id="history">
+                    <h2>Operation History</h2>
+                    <p>Historical data and operation logs will be displayed here.</p>
+                </div>
+
+                <div class="page" id="settings">
+                    <h2>System Settings</h2>
+                    <p>Advanced configuration options and preferences.</p>
+                </div>
+
+                <div class="page" id="logs">
+                    <h2>System Logs</h2>
+                    <p>Detailed system logs and diagnostic information.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced JavaScript with full API integration
+        class DriverUpdateManager {
+            constructor() {
+                this.currentSession = null;
+                this.isOperationRunning = false;
+                this.operationStartTime = null;
+                this.statusCheckInterval = null;
+                this.timeUpdateInterval = null;
+                this.connectionCheckInterval = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.startTimeUpdates();
+                this.checkServerConnection();
+                this.loadSystemInfo();
+                this.updateThreadsDisplay();
+                
+                // Start connection monitoring
+                this.connectionCheckInterval = setInterval(() => {
+                    this.checkServerConnection();
+                }, 30000); // Check every 30 seconds
+            }
+
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.showPage(link.dataset.page);
+                    });
+                });
+
+                // Settings changes
+                document.getElementById('maxThreads').addEventListener('change', () => {
+                    this.updateThreadsDisplay();
+                });
+
+                // Auto-detect optimal thread count
+                const threadInput = document.getElementById('maxThreads');
+                threadInput.value = navigator.hardwareConcurrency || 8;
+            }
+
+            startTimeUpdates() {
+                this.updateSystemTime();
+                setInterval(() => this.updateSystemTime(), 1000);
+            }
+
+            updateSystemTime() {
+                const now = new Date();
+                document.getElementById('systemTime').textContent = now.toLocaleString();
+            }
+
+            updateThreadsDisplay() {
+                const threads = document.getElementById('maxThreads').value;
+                document.getElementById('scanThreads').textContent = threads;
+            }
+
+            async checkServerConnection() {
+                try {
+                    const response = await fetch('/api/system-info', { 
+                        method: 'GET',
+                        timeout: 5000 
+                    });
+                    
+                    if (response.ok) {
+                        this.updateConnectionStatus(true);
+                    } else {
+                        this.updateConnectionStatus(false);
+                    }
+                } catch (error) {
+                    this.updateConnectionStatus(false);
+                }
+            }
+
+            updateConnectionStatus(connected) {
+                const indicator = document.getElementById('connectionStatus');
+                const text = document.getElementById('connectionText');
+                
+                if (connected) {
+                    indicator.classList.remove('disconnected');
+                    text.textContent = 'Connected to server';
+                } else {
+                    indicator.classList.add('disconnected');
+                    text.textContent = 'Server disconnected';
+                }
+            }
+
+            async loadSystemInfo() {
+                try {
+                    this.showLoadingOverlay(true);
+                    
+                    const response = await fetch('/api/system-info');
+                    const data = await response.json();
+                    
+                    document.getElementById('computerName').textContent = data.computerName || 'Unknown';
+                    document.getElementById('operatingSystem').textContent = data.operatingSystem || 'Unknown';
+                    
+                    // Update other system info if available
+                    if (data.totalDevices) {
+                        document.getElementById('totalDevices').textContent = data.totalDevices;
+                    }
+                    
+                    this.showToast('System information loaded successfully', 'success');
+                } catch (error) {
+                    console.error('Failed to load system info:', error);
+                    document.getElementById('computerName').textContent = 'Connection Error';
+                    document.getElementById('operatingSystem').textContent = 'Unable to connect';
+                    this.showToast('Failed to connect to server', 'error');
+                } finally {
+                    this.showLoadingOverlay(false);
+                }
+            }
+
+            showPage(pageId) {
+                // Hide all pages
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                
+                // Remove active class from nav links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                
+                // Show selected page
+                document.getElementById(pageId).classList.add('active');
+                
+                // Add active class to corresponding nav link
+                document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            }
+
+            getOperationSettings() {
+                return {
+                    maxThreads: parseInt(document.getElementById('maxThreads').value),
+                    timeout: parseInt(document.getElementById('operationTimeout').value),
+                    dryRun: document.getElementById('dryRun').checked,
+                    fastMode: document.getElementById('fastMode').checked,
+                    createBackup: document.getElementById('createBackup').checked,
+                    createRestorePoint: document.getElementById('createRestorePoint').checked
+                };
+            }
+
+            async startOperation(operationType) {
+                if (this.isOperationRunning) {
+                    this.showToast('An operation is already running', 'warning');
+                    return;
+                }
+
+                try {
+                    this.isOperationRunning = true;
+                    this.operationStartTime = new Date();
+                    
+                    // Switch to operations page
+                    this.showPage('operations');
+                    
+                    // Update UI
+                    this.updateOperationUI(true);
+                    this.addLogEntry(`Starting ${operationType} operation...`, 'info');
+                    this.updateProgress(0, 'Initializing...');
+                    
+                    // Get settings
+                    const settings = this.getOperationSettings();
+                    settings.action = operationType;
+                    
+                    // Determine API endpoint
+                    let endpoint;
+                    switch (operationType) {
+                        case 'scan':
+                            endpoint = 'driver-scan';
+                            break;
+                        case 'update':
+                            endpoint = 'driver-update';
+                            break;
+                        case 'windows-update':
+                            endpoint = 'windows-update';
+                            break;
+                        case 'all':
+                            endpoint = 'driver-scan'; // Start with scan for 'all'
+                            break;
+                        default:
+                            endpoint = 'driver-scan';
+                    }
+                    
+                    // Start operation
+                    const response = await fetch(`/api/${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(settings)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.sessionId) {
+                        this.currentSession = data.sessionId;
+                        this.addLogEntry(`Operation started (Session: ${data.sessionId})`, 'success');
+                        this.startProgressMonitoring();
+                        this.startTimeTracking();
+                    } else {
+                        throw new Error(data.error || 'Failed to start operation');
+                    }
+                    
+                } catch (error) {
+                    console.error('Operation start error:', error);
+                    this.addLogEntry(`Error starting operation: ${error.message}`, 'error');
+                    this.showToast(`Failed to start operation: ${error.message}`, 'error');
+                    this.resetOperationState();
+                }
+            }
+
+            startProgressMonitoring() {
+                if (!this.currentSession) return;
+                
+                this.statusCheckInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`/api/status/${this.currentSession}`);
+                        const data = await response.json();
+                        
+                        this.updateProgress(data.progress, data.status);
+                        
+                        if (data.status === 'Completed') {
+                            this.handleOperationComplete(data);
+                        } else if (data.status === 'Failed') {
+                            this.handleOperationError(data);
+                        }
+                        
+                    } catch (error) {
+                        console.error('Status check error:', error);
+                        this.addLogEntry(`Status check failed: ${error.message}`, 'error');
+                    }
+                }, 1000);
+            }
+
+            startTimeTracking() {
+                this.timeUpdateInterval = setInterval(() => {
+                    if (this.operationStartTime) {
+                        const elapsed = new Date() - this.operationStartTime;
+                        const minutes = Math.floor(elapsed / 60000);
+                        const seconds = Math.floor((elapsed % 60000) / 1000);
+                        document.getElementById('operationTime').textContent = 
+                            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            }
+
+            handleOperationComplete(data) {
+                this.addLogEntry('Operation completed successfully', 'success');
+                this.updateProgress(100, 'Completed');
+                this.displayResults(data.results);
+                this.updateSystemStats(data.results);
+                this.showToast('Operation completed successfully!', 'success');
+                this.resetOperationState();
+                
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+            }
+
+            handleOperationError(data) {
+                this.addLogEntry(`Operation failed: ${data.error || 'Unknown error'}`, 'error');
+                this.updateProgress(0, 'Failed');
+                this.showToast(`Operation failed: ${data.error || 'Unknown error'}`, 'error');
+                this.resetOperationState();
+            }
+
+            resetOperationState() {
+                this.isOperationRunning = false;
+                this.currentSession = null;
+                this.operationStartTime = null;
+                
+                if (this.statusCheckInterval) {
+                    clearInterval(this.statusCheckInterval);
+                    this.statusCheckInterval = null;
+                }
+                
+                if (this.timeUpdateInterval) {
+                    clearInterval(this.timeUpdateInterval);
+                    this.timeUpdateInterval = null;
+                }
+                
+                this.updateOperationUI(false);
+            }
+
+            updateOperationUI(running) {
+                const pauseBtn = document.getElementById('pauseBtn');
+                const cancelBtn = document.getElementById('cancelBtn');
+                
+                pauseBtn.disabled = !running;
+                cancelBtn.disabled = !running;
+                
+                // Disable/enable action buttons
+                document.querySelectorAll('.action-card .btn').forEach(btn => {
+                    btn.disabled = running;
+                });
+            }
+
+            async cancelCurrentOperation() {
+                if (!this.currentSession) return;
+                
+                try {
+                    const response = await fetch(`/api/cancel/${this.currentSession}`, {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        this.addLogEntry('Operation cancelled by user', 'warning');
+                        this.showToast('Operation cancelled', 'warning');
+                        this.resetOperationState();
+                    }
+                } catch (error) {
+                    console.error('Cancel operation error:', error);
+                    this.showToast('Failed to cancel operation', 'error');
+                }
+            }
+
+            pauseCurrentOperation() {
+                // Implementation depends on backend support for pausing
+                this.showToast('Pause functionality not yet implemented', 'info');
+            }
+
+            updateProgress(percentage, status) {
+                const progressBar = document.getElementById('progressBar');
+                const statusText = document.getElementById('operationStatus');
+                
+                progressBar.style.width = `${percentage}%`;
+                statusText.textContent = status || `${percentage}% complete`;
+            }
+
+            addLogEntry(message, type = 'info') {
+                const logOutput = document.getElementById('logOutput');
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                
+                logOutput.appendChild(entry);
+                logOutput.scrollTop = logOutput.scrollHeight;
+                
+                // Keep only last 100 log entries
+                while (logOutput.children.length > 100) {
+                    logOutput.removeChild(logOutput.firstChild);
+                }
+            }
+
+            displayResults(results) {
+                if (!results) return;
+                
+                // Update device table
+                if (results.devices) {
+                    this.populateDeviceTable(results.devices);
+                }
+                
+                // Update updates table
+                if (results.windowsUpdates) {
+                    this.populateUpdatesTable(results.windowsUpdates);
+                }
+                
+                // Update system stats
+                if (results.systemInfo) {
+                    this.updateSystemStats(results);
+                }
+                
+                // Generate summary report
+                this.generateSummaryReport(results);
+            }
+
+            populateDeviceTable(devices) {
+                const tableBody = document.getElementById('deviceTableBody');
+                tableBody.innerHTML = '';
+                
+                devices.forEach(device => {
+                    const row = document.createElement('tr');
+                    const statusClass = device.errorCode === 0 ? 'badge-success' : 'badge-danger';
+                    const actionRequired = device.needsUpdate ? 'Update Required' : 'None';
+                    
+                    row.innerHTML = `
+                        <td>${device.name || 'Unknown'}</td>
+                        <td>${device.manufacturer || 'Unknown'}</td>
+                        <td><span class="status-badge ${statusClass}">${device.status || 'Unknown'}</span></td>
+                        <td>${device.errorCode || 0}</td>
+                        <td>${device.driverVersion || 'N/A'}</td>
+                        <td>${actionRequired}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+
+            populateUpdatesTable(updates) {
+                const tableBody = document.getElementById('updatesTableBody');
+                tableBody.innerHTML = '';
+                
+                updates.forEach(update => {
+                    const row = document.createElement('tr');
+                    const typeClass = update.isMandatory ? 'badge-danger' : 'badge-info';
+                    const type = update.isMandatory ? 'Mandatory' : 'Optional';
+                    
+                    row.innerHTML = `
+                        <td>${update.title}</td>
+                        <td>${update.sizeMB || 0}</td>
+                        <td><span class="status-badge ${typeClass}">${type}</span></td>
+                        <td>${update.categories || 'Drivers'}</td>
+                        <td>${new Date().toLocaleDateString()}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+
+            updateSystemStats(results) {
+                if (results.systemInfo) {
+                    const totalElement = document.getElementById('totalDevices');
+                    const problemElement = document.getElementById('problemDevices');
+                    const lastScanElement = document.getElementById('lastScan');
+                    const healthElement = document.getElementById('systemHealth');
+                    
+                    if (results.systemInfo.totalDevices !== undefined) {
+                        totalElement.textContent = results.systemInfo.totalDevices;
+                    }
+                    
+                    if (results.systemInfo.problemDevices !== undefined) {
+                        const problemCount = results.systemInfo.problemDevices;
+                        problemElement.textContent = problemCount;
+                        problemElement.className = 'value ' + (problemCount > 0 ? 'danger' : 'success');
+                    }
+                    
+                    lastScanElement.textContent = new Date().toLocaleString();
+                    lastScanElement.style.fontSize = '1em';
+                    
+                    // Update system health based on problems
+                    const problemCount = results.systemInfo.problemDevices || 0;
+                    if (problemCount === 0) {
+                        healthElement.textContent = 'Excellent';
+                        healthElement.className = 'value success';
+                    } else if (problemCount < 5) {
+                        healthElement.textContent = 'Good';
+                        healthElement.className = 'value warning';
+                    } else {
+                        healthElement.textContent = 'Needs Attention';
+                        healthElement.className = 'value danger';
+                    }
+                }
+            }
+
+            generateSummaryReport(results) {
+                const reportDiv = document.getElementById('summaryReport');
+                
+                const totalDevices = results.systemInfo?.totalDevices || 0;
+                const problemDevices = results.systemInfo?.problemDevices || 0;
+                const workingDevices = totalDevices - problemDevices;
+                const updatesAvailable = results.windowsUpdates?.length || 0;
+                
+                reportDiv.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                        <div class="info-card">
+                            <h4>Total Devices Scanned</h4>
+                            <div class="value">${totalDevices}</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Working Properly</h4>
+                            <div class="value success">${workingDevices}</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Require Attention</h4>
+                            <div class="value ${problemDevices > 0 ? 'danger' : 'success'}">${problemDevices}</div>
+                        </div>
+                        <div class="info-card">
+                            <h4>Updates Available</h4>
+                            <div class="value warning">${updatesAvailable}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; border: 2px solid #dee2e6;">
+                        <h4 style="margin-bottom: 20px; color: #2c3e50;">Executive Summary & Recommendations</h4>
+                        <div style="line-height: 1.8; color: #495057;">
+                            ${this.generateRecommendations(problemDevices, updatesAvailable, workingDevices, totalDevices)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateRecommendations(problemDevices, updatesAvailable, workingDevices, totalDevices) {
+                let recommendations = [];
+                
+                if (problemDevices === 0 && updatesAvailable === 0) {
+                    recommendations.push('<strong style="color: #28a745;">✓ Excellent System Health:</strong> All drivers are functioning properly and up to date. No immediate action required.');
+                } else {
+                    if (problemDevices > 0) {
+                        if (problemDevices > 5) {
+                            recommendations.push(`<strong style="color: #dc3545;">⚠ Critical:</strong> ${problemDevices} devices have driver issues requiring immediate attention to ensure system stability.`);
+                        } else {
+                            recommendations.push(`<strong style="color: #ffc107;">⚠ Important:</strong> ${problemDevices} devices have driver issues that should be resolved soon.`);
+                        }
+                    }
+                    
+                    if (updatesAvailable > 0) {
+                        recommendations.push(`<strong style="color: #17a2b8;">📦 Updates Available:</strong> ${updatesAvailable} driver updates are available through Windows Update for improved performance and security.`);
+                    }
+                }
+                
+                recommendations.push(`<strong style="color: #6c757d;">📊 System Overview:</strong> ${workingDevices} of ${totalDevices} devices (${Math.round((workingDevices/totalDevices)*100)}%) are functioning properly.`);
+                
+                if (problemDevices > 0 || updatesAvailable > 0) {
+                    recommendations.push('<strong style="color: #495057;">🔧 Next Steps:</strong> Use the Update Drivers or Windows Update operations to resolve identified issues and apply available updates.');
+                }
+                
+                return '<ul><li>' + recommendations.join('</li><li>') + '</li></ul>';
+            }
+
+            showTab(tabName) {
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Remove active class from all tab buttons
+                document.querySelectorAll('.tab-button').forEach(button => {
+                    button.classList.remove('active');
+                });
+                
+                // Show selected tab content
+                document.getElementById(`${tabName}Tab`).classList.add('active');
+                
+                // Add active class to clicked button
+                event.target.classList.add('active');
+            }
+
+            showToast(message, type = 'info') {
+                // Remove existing toasts
+                document.querySelectorAll('.toast').forEach(toast => toast.remove());
+                
+                // Create new toast
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                // Show toast
+                setTimeout(() => toast.classList.add('show'), 100);
+                
+                // Hide toast after 4 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+            }
+
+            showLoadingOverlay(show) {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.display = show ? 'flex' : 'none';
+            }
+        }
+
+        // Global functions for HTML onclick handlers
+        let driverManager;
+
+        function startOperation(type) {
+            driverManager.startOperation(type);
+        }
+
+        function showTab(tabName) {
+            driverManager.showTab(tabName);
+        }
+
+        function pauseCurrentOperation() {
+            driverManager.pauseCurrentOperation();
+        }
+
+        function cancelCurrentOperation() {
+            driverManager.cancelCurrentOperation();
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            driverManager = new DriverUpdateManager();
+        });
+    </script>
+</body>
+</html>
